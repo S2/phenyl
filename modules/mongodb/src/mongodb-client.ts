@@ -244,12 +244,34 @@ export class PhenylMongoDbClient<M extends GeneralEntityMap>
   async insertAndGet<N extends Key<M>>(
     command: SingleInsertCommand<N, PreEntity<M[N]>>
   ): Promise<M[N]> {
+    console.log("IIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII")
+    console.log("IIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII")
+    console.log("IIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII")
+
     const { entityName } = command;
     const coll = this.conn.collection(entityName);
     const result = await coll.insertOne(filterInputEntity(command.value));
-    // TODO transactional operation needed
-    // @ts-ignore
-    return this.get({ entityName, id: result.insertedId });
+
+    return new Promise( async (resolve, reject) => {
+      const startUnixTime = Math.floor(Date.now() / 1000);
+      while(true){
+        try{
+          // TODO transactional operation needed
+          // @ts-ignore
+          const inserted = await this.get({ entityName, id: result.insertedId });
+          if(inserted){
+            resolve(inserted)
+          }
+        }catch(e){
+          // TODO 動き始めた時間から3秒経ったらrejectする
+          const currentUnixTime = Math.floor(Date.now() / 1000);
+          if(currentUnixTime - startUnixTime > 3){
+            reject()
+            return;
+          }
+        }
+      }
+    })
   }
 
   async insertAndGetMulti<N extends Key<M>>(
@@ -305,6 +327,9 @@ export class PhenylMongoDbClient<M extends GeneralEntityMap>
   async updateAndGet<N extends Key<M>>(
     command: IdUpdateCommand<N>
   ): Promise<EntityOf<M, N>> {
+    console.log("UUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUU")
+    console.log("UUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUU")
+    console.log("UUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUU")
     const {
       entityName,
       id,
